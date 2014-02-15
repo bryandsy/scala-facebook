@@ -13,11 +13,7 @@ import akka.io.IO
 
 import spray.can.Http
 import spray.http._
-import spray.http.HttpMethods._
 import spray.httpx.unmarshalling._
-
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 import scala.util.Try
 
@@ -32,31 +28,15 @@ object Facebook {
   * @author Andy Scott
   */
 class Facebook extends Actor {
-  import Endpoints._
   import Facebook._
   import GraphUnmarshallers._
 
   val http = IO(Http)(context.system)
 
-  /** Computes a hmac in the same manner as hash_hmac in PHP
-    */
-  private def hmac(data: String, key: String): String = {
-    val secretKey = new SecretKeySpec(key getBytes "UTF-8", "HmacSHA256")
-    val mac = Mac.getInstance("HmacSHA256")
-    mac init secretKey
-    mac
-      .doFinal(data.getBytes("UTF-8"))
-      .map("%02x" format _).mkString
-  }
-
   def receive = {
     case me: GraphMessages#Me ⇒
 
-      http ! HttpRequest(method = GET, uri = ME.withQuery(
-        Map("access_token" -> me.token) ++ me.secret
-          .map { secret ⇒ hmac(me.token, secret) }
-          .map("appsecret_proof" -> _)
-      ))
+      http ! me.toRequest
 
     case resp: HttpResponse ⇒
 
@@ -64,13 +44,6 @@ class Facebook extends Actor {
 
   }
 
-}
-
-/** Facebook endpoint URIs
-  */
-object Endpoints {
-  val graphBase = "https://graph.facebook.com/"
-  val ME = Uri(s"${graphBase}me")
 }
 
 /** Very simple test app, to be turned into tests... later.
