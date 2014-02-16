@@ -40,7 +40,9 @@ class Facebook extends Actor {
 
     case resp: HttpResponse ⇒
 
-      Console println resp.entity.as[User]
+      import sext._
+
+      Console println resp.entity.as[User].valueTreeString
 
   }
 

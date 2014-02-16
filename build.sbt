@@ -16,6 +16,12 @@ libraryDependencies += "io.spray"           %%  "spray-json"    %  "1.2.5"
 
 libraryDependencies += "com.typesafe.akka"  %%  "akka-actor"    %  "2.2.3"
 
+libraryDependencies += "com.github.nikita-volkov" % "sext" % "0.2.3"
+
+resolvers += Resolver.sonatypeRepo("snapshots")
+
+libraryDependencies += "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT"
+
 scalariformSettings
 
 ScalariformKeys.preferences := ScalariformKeys.preferences.value

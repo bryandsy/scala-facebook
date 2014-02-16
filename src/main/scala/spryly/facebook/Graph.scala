@@ -62,14 +62,63 @@ trait GraphMessages {
 case class GraphSession(
   token: String, secret: Option[String] = None) extends GraphMessages
 
+case class Page(
+  id: String,
+  name: Option[String])
+
+private[facebook] sealed trait PageJson {
+  implicit val pageFormat = jsonFormat2(Page)
+}
+
+trait PageUnmarshaller extends PageJson {
+  implicit val pageUnmarshaller = implicitly[Unmarshaller[Page]]
+}
+
+object User {
+
+  case class AgeRange(
+    /** enum 13, 18, 21 */
+    min: String,
+    /** enum 17, 20, none */
+    max: String)
+
+  case class Currency(
+    user_currency: String,
+    usd_exchange: Float,
+    usd_exchange_inverse: Float)
+
+}
+
 case class User(
   id: String,
+  age_range: Option[User.AgeRange],
   bio: Option[String],
+  /** format  MM/DD/YYYY */
+  birthday: Option[String],
+  currency: Option[User.Currency],
   name: Option[String],
-  email: Option[String])
+  email: Option[String],
+  favorite_athletes: Option[List[Page]],
+  favorite_teams: Option[List[Page]],
+  first_name: Option[String],
+  gender: Option[String],
+  hometown: Option[Page],
+  inspirational_people: List[Page],
+  installed: Option[Boolean],
+  is_verified: Option[Boolean],
+  languages: List[Page],
+  last_name: Option[String],
+  link: Option[String],
+  locale: Option[String],
+  location: Option[Page])
 
-trait UserUnmarshaller {
-  implicit val userFormat = jsonFormat4(User)
+private[facebook] sealed trait UserJson extends PageJson {
+  implicit val ageRageFormat = jsonFormat2(User.AgeRange)
+  implicit val currenctFormat = jsonFormat3(User.Currency)
+  implicit val userFormat = jsonFormat20(User.apply)
+}
+
+trait UserUnmarshaller extends UserJson {
   implicit val userUnmarshaller = implicitly[Unmarshaller[User]]
 }
 
