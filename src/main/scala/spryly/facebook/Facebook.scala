@@ -1,4 +1,4 @@
-/*                         _                                       *\
+/*                   Responding      _                                       *\
 **    ___ ____   ____    _| |_   _                                 **
 **   /___)  _ \ / ___)| | | | | | |   Spryly                       **
 **  |___ | | | | |  | |_| | | |_| |   (c) 2014, Spryly             **
@@ -10,57 +10,51 @@ package spryly.facebook
 
 import akka.actor._
 import akka.io.IO
+import akka.pattern.ask
+import akka.util.Timeout
 
 import spray.can.Http
 import spray.http._
 import spray.httpx.unmarshalling._
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 
-/** Facebook API actor companion
+/** Facebook API
   * @author Andy Scott
   */
-object Facebook {
-  def props() = Props[Facebook]
-}
-
-/** Facebook API actor
-  * @author Andy Scott
-  */
-class Facebook extends Actor {
-  import Facebook._
+class Facebook(requests: GraphRequests)(implicit system: ActorSystem) {
   import GraphUnmarshallers._
 
-  val http = IO(Http)(context.system)
+  val http = IO(Http)(system)
 
-  def receive = {
-    case me: GraphMessages#Me ⇒
+  // not very pretty, and I'm sure the types/implicits can be improved greatly... but this works for now
+  private def makeRequest[R, RR: Unmarshaller](req: R)(implicit timeout: Timeout, ec: ExecutionContext) =
+    for (resp ← http ? req mapTo manifest[HttpResponse])
+      yield resp.entity.as[RR]
 
-      http ! me.toRequest
-
-    case resp: HttpResponse ⇒
-
-      import sext._
-
-      Console println resp.entity.as[User].valueTreeString
-
-  }
-
+  def me()(implicit timeout: Timeout, ec: ExecutionContext): Future[Deserialized[User]] =
+    makeRequest(requests.me())
 }
 
 /** Very simple test app, to be turned into tests... later.
   */
 object FacebookApp extends App {
 
-  val session = GraphSession(
+  implicit val system = ActorSystem()
+  implicit val timeout = Timeout(100000)
+
+  import system.dispatcher
+
+  val requests = GraphRequests(
     sys.env("FB_TOKEN"),
     Try(sys.env("FB_APPSECRET")).toOption)
 
-  val system = ActorSystem()
+  val facebook = new Facebook(requests)
 
-  val actor = system.actorOf(Facebook.props)
-
-  actor ! session.Me()
+  for (res ← facebook.me())
+    Console println "> " + res
 
   Thread sleep 5000
 

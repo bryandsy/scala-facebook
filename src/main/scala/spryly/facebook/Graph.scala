@@ -27,40 +27,17 @@ object Endpoints {
   val Me = Uri(s"${graphBase}me")
 }
 
-object HMAC {
-  /** Computes a hmac in the same manner as hash_hmac in PHP
-    */
-  def compute(data: String, key: String): String = {
-    val secretKey = new SecretKeySpec(key getBytes "UTF-8", "HmacSHA256")
-    val mac = Mac.getInstance("HmacSHA256")
-    mac init secretKey
-    mac
-      .doFinal(data.getBytes("UTF-8"))
-      .map("%02x" format _).mkString
-  }
-}
-
-trait GraphMessages {
-
-  val token: String
-  val secret: Option[String]
+case class GraphRequests(token: String, secret: Option[String]) {
 
   lazy val cred = Map("access_token" -> token) ++ proof
   lazy val proof = secret
     .map { secret ⇒ HMAC.compute(token, secret) }
     .map("appsecret_proof" -> _)
 
-  sealed trait Operation {
-    def toRequest = HttpRequest(method = GET, uri = Endpoints.Me.withQuery(
-      cred
-    ))
-  }
-
-  case class Me() extends Operation
+  def me() = HttpRequest(method = GET, uri = Endpoints.Me.withQuery(
+    cred
+  ))
 }
-
-case class GraphSession(
-  token: String, secret: Option[String] = None) extends GraphMessages
 
 case class Page(
   id: String,
@@ -75,18 +52,15 @@ trait PageUnmarshaller extends PageJson {
 }
 
 object User {
-
   case class AgeRange(
     /** enum 13, 18, 21 */
     min: String,
     /** enum 17, 20, none */
     max: String)
-
   case class Currency(
     user_currency: String,
     usd_exchange: Float,
     usd_exchange_inverse: Float)
-
 }
 
 case class User(
