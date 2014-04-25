@@ -1,10 +1,18 @@
-/*                         _                                       *\
-**    ___ ____   ____    _| |_   _                                 **
-**   /___)  _ \ / ___)| | | | | | |   Spryly                       **
-**  |___ | | | | |  | |_| | | |_| |   (c) 2014, Spryly             **
-**  (___/| ||_/|_|   \__  |_|\__  |   http://spryly.com            **
-**       |_|        (____/  (____/                                 **
-\*                                                                 */
+/*
+ * Copyright © 2013-2014 Spryly <http://spryly.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package spryly.facebook
 
@@ -32,7 +40,7 @@ case class GraphRequests(token: String, secret: Option[String]) {
   lazy val cred = Map("access_token" -> token) ++ proof
   lazy val proof = secret
     .map { secret ⇒ HMAC.compute(token, secret) }
-    .map("appsecret_proof" -> _)
+    .map { "appsecret_proof" -> _ }
 
   def me() = HttpRequest(method = GET, uri = Endpoints.Me.withQuery(
     cred
@@ -51,6 +59,7 @@ trait PageUnmarshaller extends PageJson {
   implicit val pageUnmarshaller = implicitly[Unmarshaller[Page]]
 }
 
+/** Facebook graph user */
 object User {
   case class AgeRange(
     /** enum 13, 18, 21 */
@@ -63,6 +72,7 @@ object User {
     usd_exchange_inverse: Float)
 }
 
+/** Facebook graph user */
 case class User(
   id: String,
   age_range: Option[User.AgeRange],
